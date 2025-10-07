@@ -3,7 +3,7 @@
 ## **Overview**
 
 This project automates the deployment of cloud applications through a single configuration file (called a Spec File).  
-It parses, validates, and provisions complete AWS infrastructure — including EC2, RDS, and networking — while managing Docker image building and Terraform automation.
+It parses, validates, and provisions complete AWS infrastructure including EC2, RDS, and networking while managing Docker image building and Terraform automation.
 
 The goal is to make cloud deployment as easy as running:
 
@@ -234,4 +234,4 @@ After a successful run:
 
 ## 💡 **Vision**
 
-The ultimate goal is to provide a one-command deployment experience, bridging local development and cloud infrastructure provisioning — in an IDE-friendly, fully automated way.
+The ultimate goal is to provide a one-command deployment experience, bridging local development and cloud infrastructure provisioning in an IDE-friendly, fully automated way.
