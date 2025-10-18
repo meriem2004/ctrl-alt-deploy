@@ -1,0 +1,27 @@
+# Core Dependencies for Deployment Specification Parser & Validator
+
+# Data validation and parsing
+pydantic==2.12.3
+pydantic_core==2.41.4
+
+# YAML parsing
+PyYAML==6.0.3
+
+# Rich console output and formatting
+rich==14.2.0
+colorama==0.4.6
+Pygments==2.19.2
+
+# CLI framework (for future CLI implementation)
+typer==0.19.2
+click==8.3.0
+shellingham==1.5.4
+
+# Markdown processing (for documentation)
+markdown-it-py==4.0.0
+mdurl==0.1.2
+
+# Type checking utilities
+typing-inspection==0.4.2
+typing_extensions==4.15.0
+annotated-types==0.7.0
