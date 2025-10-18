@@ -1,4 +1,4 @@
-# 🚀 **Deployment Specification Parser & Validator**
+# **Deployment Specification Parser & Validator**
 
 ## **Overview**
 
@@ -11,41 +11,32 @@ The system performs comprehensive validation including:
 - **AWS configuration validation**
 - **Security best practices checking**
 
-## **🎯 Current Status**
+## **Current Status**
 
 This is the **parsing and validation layer** of a larger deployment automation system. It ensures deployment specifications are valid before they proceed to infrastructure provisioning.
 
-## **📋 Features**
+## **Features**
 
 ### **Validation Capabilities**
-- ✅ **YAML/JSON Support**: Parse both YAML and JSON specification files
-- ✅ **Syntactic Validation**: Pydantic-based structure and type validation
-- ✅ **Semantic Validation**: Business logic and consistency checks
-- ✅ **Dependency Analysis**: Detect circular dependencies between services
-- ✅ **AWS Configuration**: Validate regions, credentials, and service configurations
-- ✅ **Security Checks**: Identify potential security issues and best practices
-- ✅ **Port Conflict Detection**: Prevent services from using conflicting ports
-- ✅ **Service Type Validation**: Ensure EC2, RDS, ECS configurations are logical
+- **YAML/JSON Support**: Parse both YAML and JSON specification files
+- **Syntactic Validation**: Pydantic-based structure and type validation
+- **Semantic Validation**: Business logic and consistency checks
+- **Dependency Analysis**: Detect circular dependencies between services
+- **AWS Configuration**: Validate regions, credentials, and service configurations
+- **Security Checks**: Identify potential security issues and best practices
+- **Port Conflict Detection**: Prevent services from using conflicting ports
+- **Service Type Validation**: Ensure EC2, RDS, ECS configurations are logical
 
-### **User Experience**
-- 🎨 **Rich Console Output**: Beautiful tables and colored formatting
-- 📊 **Detailed Error Messages**: Clear explanations of validation failures
-- ⚠️ **Security Warnings**: Proactive security issue identification
-- ✓ **Progress Indicators**: Visual feedback during validation process
 
----
 
-## **🛠️ Installation & Setup**
+## **Installation & Setup**
 
 ### **Prerequisites**
 - Python 3.11+ (tested with Python 3.11.0)
 - pip (Python package manager)
 
 ### **1. Clone the Repository**
-```bash
-git clone <repository-url>
-cd ctrl-alt-deploy
-```
+
 
 ### **2. Create Virtual Environment**
 ```bash
@@ -64,63 +55,10 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### **4. Verify Installation**
-```bash
-python test_parser.py
-```
 
-You should see all 3 tests pass:
-- ✅ TEST 1: Valid Specification
-- ✅ TEST 2: Invalid Specification  
-- ✅ TEST 3: Circular Dependency Detection
 
----
 
-## **🧪 Testing**
-
-### **Run All Tests**
-```bash
-python test_parser.py
-```
-
-### **Test Descriptions**
-
-#### **Test 1: Valid Specification**
-- Parses `examples/sample-spec.yaml`
-- Validates correct YAML structure and content
-- Displays formatted service summary with tables
-- **Expected**: ✅ All validations pass
-
-#### **Test 2: Invalid Specification** 
-- Tests error handling with intentionally invalid data:
-  - AWS keys too short (< 16 characters)
-  - Invalid scalability value ("INVALID")
-  - Port number out of range (99999)
-- **Expected**: ❌ Validation fails with detailed error messages
-
-#### **Test 3: Circular Dependency Detection**
-- Creates services with circular dependencies (A → B → C → A)
-- Tests dependency graph analysis
-- **Expected**: ❌ Circular dependency detected and reported
-
-### **Manual Testing**
-
-You can also test individual specifications:
-
-```python
-from src.validators.parser import parse_deployment_spec
-
-# Test your own specification
-try:
-    spec = parse_deployment_spec("your-spec.yaml")
-    print("✅ Specification is valid!")
-except Exception as e:
-    print(f"❌ Validation failed: {e}")
-```
-
----
-
-## **📁 Project Structure**
+## **Project Structure**
 
 ```
 ctrl-alt-deploy/
@@ -144,7 +82,7 @@ ctrl-alt-deploy/
 
 ---
 
-## **📝 Specification Format**
+## **Specification Format**
 
 ### **Basic Structure**
 ```yaml
@@ -200,7 +138,7 @@ application:
 
 ---
 
-## **🔧 Dependencies**
+## **Dependencies**
 
 This project uses the following key dependencies:
 
@@ -211,72 +149,4 @@ This project uses the following key dependencies:
 
 See `requirements.txt` for complete dependency list with versions.
 
----
 
-## **🚀 Future Roadmap**
-
-This parser is designed to integrate with:
-
-1. **Terraform Generator**: Convert validated specs to Terraform configurations
-2. **Docker Builder**: Automated Docker image building and pushing  
-3. **AWS Provisioner**: Infrastructure deployment and management
-4. **CLI Interface**: Command-line tool for easy deployment
-5. **Web Dashboard**: Visual deployment management interface
-
----
-
-## **🤝 Contributing**
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes and add tests
-4. Run tests: `python test_parser.py`
-5. Commit changes: `git commit -m "Add feature"`
-6. Push to branch: `git push origin feature-name`
-7. Submit a pull request
-
----
-
-## **📄 License**
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-## **🐛 Troubleshooting**
-
-### **Common Issues**
-
-#### **Import Errors**
-```bash
-ModuleNotFoundError: No module named 'src'
-```
-**Solution**: Make sure you're running from the project root directory.
-
-#### **Virtual Environment Issues**
-```bash
-# Deactivate and recreate virtual environment
-deactivate
-rm -rf venv  # or rmdir /s venv on Windows
-python -m venv venv
-venv\Scripts\activate  # Windows
-pip install -r requirements.txt
-```
-
-#### **Test Failures**
-If tests fail, check:
-1. All dependencies are installed: `pip list`
-2. Python version is 3.11+: `python --version`
-3. You're in the correct directory: `ls` should show `test_parser.py`
-
-### **Getting Help**
-
-If you encounter issues:
-1. Check the error message carefully
-2. Verify your Python and pip versions
-3. Ensure all dependencies are installed
-4. Try running tests in a fresh virtual environment
-
----
-
-**Happy Validating! 🎉**
