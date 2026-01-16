@@ -1,0 +1,33 @@
+spec_version: "1.0.0"
+aws:
+  access_key: "TEST_ACCESS_KEY_12345"
+  secret_key: "TEST_SECRET_KEY_12345_LONG_ENOUGH"
+  region: "us-east-1"
+docker:
+  hub_credentials:
+    username: "test_user"
+    password: "test_password"
+infrastructure:
+  scalability: "MED"
+  machine_size: "M"
+  key_pair: "test-keypair"
+  dns_enabled: true
+application:
+  repository_url: "https://github.com/test/app.git"
+  services:
+    - name: "backend"
+      dockerfile_path: "./backend/Dockerfile"
+      ports: [8080]
+      environment:
+        DB_HOST: "database"
+        DB_USER: "admin"
+      scaling:
+        min: 1
+        max: 3
+      type: "EC2"
+    - name: "database"
+      image: "mysql:8"
+      ports: [3306]
+      environment:
+        MYSQL_ROOT_PASSWORD: "StrongPassword123!"
+      type: "RDS"

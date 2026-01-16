@@ -1,0 +1,14 @@
+{
+  "name": "ctrl-alt-deploy",
+  "version": "1.0.0",
+  "description": "Deployment Automation Tool",
+  "bin": {
+    "deploy": "./bin/deploy.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {}
+}
