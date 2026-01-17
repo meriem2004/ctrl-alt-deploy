@@ -112,3 +112,15 @@ test_*.yaml
 test_*.json
 circular-spec.yaml
 invalid-spec.yaml
+
+# AWS Credentials and Keys (NEVER COMMIT THESE!)
+spec.json
+# Note: example_spec*.json contient des credentials d'exemple (AKIAIOSFODNN7EXAMPLE)
+# Ces fichiers peuvent être commités car ce sont des exemples factices
+*.pem
+*.ppk
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+terraform_output/

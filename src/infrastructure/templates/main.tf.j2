@@ -1,0 +1,29 @@
+# Template principal Terraform - Configuration du provider AWS
+# Ce fichier configure Terraform pour utiliser AWS comme provider
+
+terraform {
+  required_version = ">= 1.0"
+  
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = "{{ region }}"
+{% if access_key and secret_key %}
+  access_key = "{{ access_key }}"
+  secret_key = "{{ secret_key }}"
+{% endif %}
+  
+  default_tags {
+    tags = {
+      ManagedBy   = "ctrl-alt-deploy"
+      Environment = "{{ environment | default('production') }}"
+    }
+  }
+}
+
