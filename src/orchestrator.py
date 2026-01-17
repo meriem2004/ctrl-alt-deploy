@@ -26,16 +26,16 @@ class DeploymentOrchestrator:
         terraform_dir = generate_terraform_config(self.spec)
 
         # Step 3: Execute Terraform
-        #executor = TerraformExecutor(terraform_dir)
+        executor = TerraformExecutor(terraform_dir)
 
-        #if not executor.init():
-        #    return False
+        if not executor.init():
+            return False
 
-        #if not executor.plan():
-        #    return False
+        if not executor.plan():
+            return False
 
-        #if not executor.apply():
-        #    return False*/
+        if not executor.apply():
+            return False
 
         console.print(Panel.fit("[bold green]✨ Deployment Sequence Completed![/bold green]"))
         return True

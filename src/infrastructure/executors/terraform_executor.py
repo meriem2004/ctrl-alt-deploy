@@ -1,57 +1,53 @@
 import subprocess
 from pathlib import Path
 from rich.console import Console
+from rich.panel import Panel
 
 console = Console()
 
 
 class TerraformExecutor:
-    """
-    Responsible for executing Terraform commands
-    (init, plan, apply, destroy) on a generated Terraform directory.
-    """
+    def __init__(self, terraform_dir: str | Path):
+        self.terraform_dir = Path(terraform_dir)
 
-    def __init__(self, terraform_dir: Path):
-        self.terraform_dir = terraform_dir
+    def _run(self, command: list[str], title: str) -> bool:
+        """
+        Run a Terraform command and stream output directly to the terminal.
+        """
+        console.print(Panel.fit(f"[bold cyan]{title}[/bold cyan]"))
 
-        if not self.terraform_dir.exists():
-            raise ValueError(f"Terraform directory does not exist: {terraform_dir}")
-
-    def init(self) -> bool:
-        return self._run_command(["terraform", "init"])
-
-    def plan(self) -> bool:
-        return self._run_command(["terraform", "plan"])
-
-    def apply(self, auto_approve: bool = True) -> bool:
-        cmd = ["terraform", "apply"]
-        if auto_approve:
-            cmd.append("-auto-approve")
-        return self._run_command(cmd)
-
-    def destroy(self, auto_approve: bool = True) -> bool:
-        cmd = ["terraform", "destroy"]
-        if auto_approve:
-            cmd.append("-auto-approve")
-        return self._run_command(cmd)
-
-    def _run_command(self, command: list[str]) -> bool:
-        console.print(f"\n[bold cyan]▶ Running:[/bold cyan] {' '.join(command)}")
-
-        process = subprocess.run(
+        result = subprocess.run(
             command,
             cwd=self.terraform_dir,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
+            shell=False
+            # ❌ NO stdout=PIPE
+            # ❌ NO stderr=PIPE
+            # ✅ Terraform writes directly to PowerShell
         )
 
-        if process.stdout:
-            console.print(process.stdout)
-
-        if process.returncode != 0:
-            console.print(f"[bold red]Terraform command failed[/bold red]")
-            console.print(process.stderr)
+        if result.returncode != 0:
+            console.print(
+                f"[bold red]✗ Command failed:[/bold red] {' '.join(command)}"
+            )
             return False
 
+        console.print(f"[bold green]✓ {title} completed successfully[/bold green]")
         return True
+
+    def init(self) -> bool:
+        return self._run(
+            ["terraform", "init"],
+            "⚙️ Terraform Initialization"
+        )
+
+    def plan(self) -> bool:
+        return self._run(
+            ["terraform", "plan"],
+            "📐 Terraform Plan"
+        )
+
+    def apply(self) -> bool:
+        return self._run(
+            ["terraform", "apply", "-auto-approve"],
+            "🚀 Terraform Apply"
+        )
