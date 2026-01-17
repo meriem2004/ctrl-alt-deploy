@@ -6,6 +6,14 @@ resource "aws_instance" "{{ service_name }}" {
   ami           = "{{ ami_id }}"
   key_name      = "{{ key_pair_name }}"
   
+{% if vpc_id %}
+  # Utiliser un VPC existant
+  subnet_id = data.aws_subnets.existing[0].ids[0]
+{% else %}
+  # Utiliser le VPC créé automatiquement
+  subnet_id = aws_subnet.public[0].id
+{% endif %}
+  
   tags = {
     Name      = "{{ service_name }}"
     Service   = "{{ service_name }}"

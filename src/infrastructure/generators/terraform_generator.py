@@ -26,10 +26,15 @@ src_path = Path(__file__).parent.parent.parent
 if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
 
-from models.models import DeploymentSpec, Service, ServiceType
+from models.models import DeploymentSpec, Service, ServiceType, Scalability
 
 # Import des mappers pour convertir les abstractions
 from infrastructure.mappers.instance_mapper import get_instance_type_for_service
+from infrastructure.mappers.rds_mapper import (
+    get_rds_instance_type_for_service,
+    map_docker_image_to_rds_engine,
+    get_rds_engine_version
+)
 
 
 class TerraformGenerator:
@@ -101,12 +106,25 @@ class TerraformGenerator:
         self._generate_variables_tf(spec)
         print("✓ variables.tf généré")
         
+        # Étape 2.5 : Générer le VPC si nécessaire (si vpc_id n'est pas spécifié)
+        if not spec.infrastructure.vpc_id:
+            self._generate_vpc_tf(spec)
+            print("✓ vpc.tf généré (VPC automatique)")
+        
         # Étape 3 : Générer un fichier .tf pour chaque service EC2
         ec2_services = [s for s in spec.application.services if s.type == ServiceType.EC2]
         
         for service in ec2_services:
             # Génère un fichier spécifique pour chaque service EC2
             self._generate_ec2_instance_tf(service, spec)
+            print(f"✓ {service.name}_instance.tf généré")
+        
+        # Étape 4 : Générer un fichier .tf pour chaque service RDS
+        rds_services = [s for s in spec.application.services if s.type == ServiceType.RDS]
+        
+        for service in rds_services:
+            # Génère un fichier spécifique pour chaque service RDS
+            self._generate_rds_instance_tf(service, spec)
             print(f"✓ {service.name}_instance.tf généré")
         
         print(f"\n✅ Configuration Terraform générée avec succès dans {self.output_dir}")
@@ -205,6 +223,60 @@ class TerraformGenerator:
         output_file = self.output_dir / f"{service.name}_instance.tf"
         output_file.write_text(rendered, encoding="utf-8")
     
+    def _generate_rds_instance_tf(self, service: Service, spec: DeploymentSpec) -> None:
+        """
+        Génère un fichier Terraform pour une instance RDS spécifique.
+        
+        Args:
+            service: Le service RDS à déployer (contient name, image, ports, environment, etc.)
+            spec: Le DeploymentSpec complet (pour accéder à infrastructure, aws, etc.)
+        """
+        # Charge le template rds_instance.tf.j2
+        template = self.jinja_env.get_template("rds_instance.tf.j2")
+        
+        # Utilise le mapper pour convertir machine_size + scalability en type d'instance RDS
+        rds_instance_type = get_rds_instance_type_for_service(
+            machine_size=spec.infrastructure.machine_size,
+            scalability=spec.infrastructure.scalability
+        )
+        
+        # Convertit l'image Docker en moteur RDS
+        rds_engine = map_docker_image_to_rds_engine(service.image or "mysql:8")
+        rds_engine_version = get_rds_engine_version(service.image or "mysql:8")
+        
+        # Extrait les informations de la base de données depuis l'environnement
+        # Les variables d'environnement peuvent contenir : MYSQL_ROOT_PASSWORD, POSTGRES_PASSWORD, etc.
+        db_password = service.environment.get(
+            "MYSQL_ROOT_PASSWORD",
+            service.environment.get("POSTGRES_PASSWORD", "changeme123!")
+        )
+        db_name = service.environment.get("MYSQL_DATABASE", service.environment.get("POSTGRES_DB", service.name))
+        db_username = service.environment.get("MYSQL_USER", service.environment.get("POSTGRES_USER", "admin"))
+        
+        # Prépare les données pour le template
+        context = {
+            "service_name": service.name,
+            "instance_type": rds_instance_type,
+            "engine": rds_engine,
+            "engine_version": rds_engine_version,
+            "ports": service.ports if service.ports else [3306 if rds_engine == "mysql" else 5432],
+            "db_name": db_name,
+            "db_username": db_username,
+            "db_password": db_password,
+            "allocated_storage": 20,  # 20 GB par défaut
+            "max_allocated_storage": 100,  # 100 GB max
+            "multi_az": spec.infrastructure.scalability == Scalability.HIGH,  # Multi-AZ pour haute disponibilité
+            "vpc_id": spec.infrastructure.vpc_id,  # Peut être None
+        }
+        
+        # Rend le template
+        rendered = template.render(**context)
+        
+        # Écrit le fichier avec le nom du service
+        # Ex: database_instance.tf
+        output_file = self.output_dir / f"{service.name}_instance.tf"
+        output_file.write_text(rendered, encoding="utf-8")
+    
     def _get_ami_id_for_region(self, region: str) -> str:
         """
         Retourne l'AMI ID (Amazon Machine Image) pour une région donnée.
@@ -233,6 +305,30 @@ class TerraformGenerator:
         
         # Retourne l'AMI pour la région, ou une valeur par défaut
         return ami_mapping.get(region, "ami-0c55b159cbfafe1f0")  # Par défaut: us-east-1
+    
+    def _generate_vpc_tf(self, spec: DeploymentSpec) -> None:
+        """
+        Génère un fichier Terraform pour créer un VPC complet si vpc_id n'est pas spécifié.
+        
+        Args:
+            spec: Le DeploymentSpec contenant la configuration
+        """
+        # Charge le template vpc.tf.j2
+        template = self.jinja_env.get_template("vpc.tf.j2")
+        
+        # Prépare les données pour le template
+        context = {
+            "vpc_cidr": "10.0.0.0/16",  # CIDR par défaut pour le VPC
+            "dns_enabled": spec.infrastructure.dns_enabled,
+            "availability_zones_count": 2,  # 2 AZs par défaut pour haute disponibilité
+        }
+        
+        # Rend le template
+        rendered = template.render(**context)
+        
+        # Écrit le fichier vpc.tf
+        output_file = self.output_dir / "vpc.tf"
+        output_file.write_text(rendered, encoding="utf-8")
 
 
 def generate_terraform_config(spec: DeploymentSpec, output_dir: str = "terraform_output") -> Path:

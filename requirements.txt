@@ -28,3 +28,7 @@ annotated-types==0.7.0
 
 # Template engine for Terraform generation
 Jinja2==3.1.2
+
+# Testing framework
+pytest==7.4.3
+pytest-cov==4.1.0
