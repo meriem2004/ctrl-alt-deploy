@@ -1,0 +1,44 @@
+# Variables Terraform pour la configuration
+
+variable "aws_region" {
+  description = "Région AWS où déployer les ressources"
+  type        = string
+  default     = "{{ region }}"
+}
+
+variable "key_pair_name" {
+  description = "Nom de la clé SSH AWS pour se connecter aux instances EC2"
+  type        = string
+  default     = "{{ key_pair_name }}"
+}
+
+variable "ami_id" {
+  description = "ID de l'AMI (Amazon Machine Image) à utiliser pour les instances EC2"
+  type        = string
+  default     = "{{ ami_id }}"
+}
+
+{% if vpc_id %}
+variable "vpc_id" {
+  description = "ID du VPC existant à utiliser"
+  type        = string
+  default     = "{{ vpc_id }}"
+}
+{% endif %}
+
+{% if access_key and secret_key %}
+variable "aws_access_key" {
+  description = "Clé d'accès AWS"
+  type        = string
+  sensitive   = true
+  default     = "{{ access_key }}"
+}
+
+variable "aws_secret_key" {
+  description = "Clé secrète AWS"
+  type        = string
+  sensitive   = true
+  default     = "{{ secret_key }}"
+}
+{% endif %}
+

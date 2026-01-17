@@ -1,0 +1,93 @@
+# Template pour générer une ressource EC2 Terraform
+# Variables: service_name, instance_type, key_pair_name, ports, docker_image, ami_id
+
+resource "aws_instance" "{{ service_name }}" {
+  instance_type = "{{ instance_type }}"
+  ami           = "{{ ami_id }}"
+  key_name      = "{{ key_pair_name }}"
+  
+  tags = {
+    Name      = "{{ service_name }}"
+    Service   = "{{ service_name }}"
+    ManagedBy = "ctrl-alt-deploy"
+{% if tags %}
+{% for key, value in tags.items() %}
+    {{ key }} = "{{ value }}"
+{% endfor %}
+{% endif %}
+  }
+  
+  security_groups = [aws_security_group.{{ service_name }}_sg.name]
+  
+  user_data = <<-EOF
+#!/bin/bash
+apt-get update
+apt-get install -y docker.io
+systemctl start docker
+systemctl enable docker
+apt-get install -y docker-compose
+{% if docker_image %}
+docker pull {{ docker_image }}
+docker run -d {% for port in ports %}-p {{ port }}:{{ port }} {% endfor %}{{ docker_image }}
+{% endif %}
+EOF
+  
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# Security Group pour l'instance EC2
+resource "aws_security_group" "{{ service_name }}_sg" {
+  name        = "{{ service_name }}-sg"
+  description = "Security group for {{ service_name }} service"
+  
+{% for port in ports %}
+  ingress {
+    description = "Allow traffic on port {{ port }}"
+    from_port   = {{ port }}
+    to_port     = {{ port }}
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+{% endfor %}
+  
+  ingress {
+    description = "Allow SSH access"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  egress {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  tags = {
+    Name      = "{{ service_name }}-sg"
+    Service   = "{{ service_name }}"
+    ManagedBy = "ctrl-alt-deploy"
+  }
+}
+
+# Outputs - Valeurs retournées après le déploiement
+output "{{ service_name }}_instance_id" {
+  description = "ID de l'instance EC2 pour {{ service_name }}"
+  value       = aws_instance.{{ service_name }}.id
+}
+
+output "{{ service_name }}_public_ip" {
+  description = "IP publique de l'instance EC2 pour {{ service_name }}"
+  value       = aws_instance.{{ service_name }}.public_ip
+}
+
+output "{{ service_name }}_public_dns" {
+  description = "DNS publique de l'instance EC2 pour {{ service_name }}"
+  value       = aws_instance.{{ service_name }}.public_dns
+}
+

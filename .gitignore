@@ -112,3 +112,13 @@ test_*.yaml
 test_*.json
 circular-spec.yaml
 invalid-spec.yaml
+
+# AWS Credentials and Keys (NEVER COMMIT THESE!)
+spec.json
+*.pem
+*.ppk
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+terraform_output/
