@@ -3,6 +3,9 @@ from pathlib import Path
 from rich.console import Console
 from rich.panel import Panel
 from validators.parser import parse_deployment_spec, ParseError
+from infrastructure.generators.terraform_generator import generate_terraform_config
+from infrastructure.executors.terraform_executor import TerraformExecutor
+
 
 console = Console()
 
@@ -19,11 +22,20 @@ class DeploymentOrchestrator:
             console.print("[bold red]⛔ Deployment Aborted due to validation errors.[/bold red]")
             return False
 
-        # Step 2: Plan (Stub)
-        self.plan()
+        # Step 2: Generate Terraform configuration
+        terraform_dir = generate_terraform_config(self.spec)
 
-        # Step 3: Apply (Stub)
-        self.apply()
+        # Step 3: Execute Terraform
+        #executor = TerraformExecutor(terraform_dir)
+
+        #if not executor.init():
+        #    return False
+
+        #if not executor.plan():
+        #    return False
+
+        #if not executor.apply():
+        #    return False*/
 
         console.print(Panel.fit("[bold green]✨ Deployment Sequence Completed![/bold green]"))
         return True
