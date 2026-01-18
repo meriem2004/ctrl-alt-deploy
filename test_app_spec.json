@@ -1,0 +1,40 @@
+{
+    "aws": {
+        "access_key": "AKIAIOSFODNN7EXAMPLE",
+        "secret_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+        "region": "us-east-1"
+    },
+    "docker": {
+        "hub_credentials": {
+            "username": "myuser",
+            "password": "mypassword"
+        }
+    },
+    "infrastructure": {
+        "scalability": "LOW",
+        "machine_size": "S",
+        "vpc_id": null,
+        "key_pair": null,
+        "dns_enabled": true
+    },
+    "application": {
+        "repository_url": "https://github.com/myuser/ctrl-alt-deploy-landing.git",
+        "services": [
+            {
+                "name": "landing-page",
+                "image": "myuser/ctrl-alt-deploy-landing:latest",
+                "ports": [
+                    3000
+                ],
+                "environment": {
+                    "NODE_ENV": "production"
+                },
+                "scaling": {
+                    "min": 1,
+                    "max": 1
+                },
+                "type": "EC2"
+            }
+        ]
+    }
+}

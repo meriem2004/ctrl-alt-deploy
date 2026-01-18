@@ -109,7 +109,6 @@ Thumbs.db
 
 # Test files (keep the main test_parser.py but ignore temp test files)
 test_*.yaml
-test_*.json
 circular-spec.yaml
 invalid-spec.yaml
 
