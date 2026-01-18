@@ -60,7 +60,7 @@ class InfrastructureConfig(BaseModel):
     scalability: Scalability = Field(default=Scalability.MED, description="Overall scalability level")
     machine_size: MachineSize = Field(default=MachineSize.M, description="Default machine size")
     vpc_id: Optional[str] = Field(None, description="Existing VPC ID (optional)")
-    key_pair: str = Field(..., description="SSH key pair name for EC2 instances")
+    key_pair: Optional[str] = Field(None, description="SSH key pair name for EC2 instances (Optional)")
     dns_enabled: bool = Field(default=False, description="Enable DNS configuration")
 
 

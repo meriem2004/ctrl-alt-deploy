@@ -4,7 +4,7 @@
 # VPC principal
 resource "aws_vpc" "main" {
   cidr_block           = "{{ vpc_cidr | default('10.0.0.0/16') }}"
-  enable_dns_hostnames = {{ dns_enabled | default(true) }}
+  enable_dns_hostnames = {{ 'true' if dns_enabled else 'false' }}
   enable_dns_support   = true
   
   tags = {

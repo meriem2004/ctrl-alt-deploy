@@ -29,7 +29,10 @@ if str(src_path) not in sys.path:
 from models.models import DeploymentSpec, Service, ServiceType, Scalability
 
 # Import des mappers pour convertir les abstractions
-from infrastructure.mappers.instance_mapper import get_instance_type_for_service
+from infrastructure.mappers.instance_mapper import (
+    get_instance_type_for_service,
+    map_scalability_to_max_instances
+)
 from infrastructure.mappers.rds_mapper import (
     get_rds_instance_type_for_service,
     map_docker_image_to_rds_engine,
@@ -169,13 +172,9 @@ class TerraformGenerator:
         # Prépare les données pour le template
         context = {
             "region": spec.aws.region,
-            "key_pair_name": spec.infrastructure.key_pair,
             "vpc_id": spec.infrastructure.vpc_id,   # Peut être None
             "access_key": spec.aws.access_key,
             "secret_key": spec.aws.secret_key,
-            # AMI ID par défaut (Ubuntu 22.04 LTS pour us-east-1)
-            # En production, on devrait mapper par région
-            "ami_id": self._get_ami_id_for_region(spec.aws.region)
         }
         
         # Rend le template
@@ -206,12 +205,11 @@ class TerraformGenerator:
         context = {
             "service_name": service.name,           # Nom du service (ex: "backend")
             "instance_type": instance_type,          # Type d'instance (ex: "t3.medium")
-            "key_pair_name": spec.infrastructure.key_pair,
             "region": spec.aws.region,
             "ports": service.ports,                 # Liste des ports (ex: [8080, 3000])
+            "max_instances": map_scalability_to_max_instances(spec.infrastructure.scalability),
             "vpc_id": spec.infrastructure.vpc_id,    # Peut être None
             "docker_image": service.image,          # Image Docker si spécifiée (peut être None)
-            "ami_id": self._get_ami_id_for_region(spec.aws.region),
             "tags": {}                              # Tags personnalisés (vide pour l'instant)
         }
         
@@ -276,35 +274,6 @@ class TerraformGenerator:
         # Ex: database_instance.tf
         output_file = self.output_dir / f"{service.name}_instance.tf"
         output_file.write_text(rendered, encoding="utf-8")
-    
-    def _get_ami_id_for_region(self, region: str) -> str:
-        """
-        Retourne l'AMI ID (Amazon Machine Image) pour une région donnée.
-        
-        Une AMI est une image de système d'exploitation préconfigurée.
-        Chaque région AWS a ses propres AMIs.
-        
-        Args:
-            region: La région AWS (ex: "us-east-1")
-            
-        Returns:
-            L'ID de l'AMI Ubuntu 22.04 LTS pour cette région
-            
-        Note: 
-            En production, on devrait avoir un mapping complet par région.
-            Ici, on retourne une valeur par défaut pour us-east-1.
-        """
-        # Mapping simplifié : AMI Ubuntu 22.04 LTS par région
-        # Format: ami-XXXXXXXXXXXXX
-        ami_mapping = {
-            "us-east-1": "ami-0c55b159cbfafe1f0",      # N. Virginia
-            "us-west-2": "ami-0c65adc9a5c1b5d7a",      # Oregon
-            "eu-west-1": "ami-0c94855ba95b798c7",      # Ireland
-            "eu-central-1": "ami-0d527b8c289b4af7f",   # Frankfurt
-        }
-        
-        # Retourne l'AMI pour la région, ou une valeur par défaut
-        return ami_mapping.get(region, "ami-0c55b159cbfafe1f0")  # Par défaut: us-east-1
     
     def _generate_vpc_tf(self, spec: DeploymentSpec) -> None:
         """

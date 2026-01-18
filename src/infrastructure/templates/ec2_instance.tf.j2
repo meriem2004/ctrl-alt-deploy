@@ -1,10 +1,9 @@
 # Template pour générer une ressource EC2 Terraform
-# Variables: service_name, instance_type, key_pair_name, ports, docker_image, ami_id
+# Variables: service_name, instance_type, ports, docker_image, max_instances
 
 resource "aws_instance" "{{ service_name }}" {
   instance_type = "{{ instance_type }}"
-  ami           = "{{ ami_id }}"
-  key_name      = "{{ key_pair_name }}"
+  ami           = data.aws_ami.ubuntu.id
   
 {% if vpc_id %}
   # Utiliser un VPC existant
@@ -25,7 +24,7 @@ resource "aws_instance" "{{ service_name }}" {
 {% endif %}
   }
   
-  security_groups = [aws_security_group.{{ service_name }}_sg.name]
+  vpc_security_group_ids = [aws_security_group.{{ service_name }}_sg.id]
   
   user_data = <<-EOF
 #!/bin/bash
@@ -49,6 +48,11 @@ EOF
 resource "aws_security_group" "{{ service_name }}_sg" {
   name        = "{{ service_name }}-sg"
   description = "Security group for {{ service_name }} service"
+{% if vpc_id %}
+  vpc_id      = "{{ vpc_id }}"
+{% else %}
+  vpc_id      = aws_vpc.main.id
+{% endif %}
   
 {% for port in ports %}
   ingress {
@@ -59,14 +63,6 @@ resource "aws_security_group" "{{ service_name }}_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 {% endfor %}
-  
-  ingress {
-    description = "Allow SSH access"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
   
   egress {
     description = "Allow all outbound traffic"

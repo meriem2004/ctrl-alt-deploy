@@ -6,17 +6,6 @@ variable "aws_region" {
   default     = "{{ region }}"
 }
 
-variable "key_pair_name" {
-  description = "Nom de la clé SSH AWS pour se connecter aux instances EC2"
-  type        = string
-  default     = "{{ key_pair_name }}"
-}
-
-variable "ami_id" {
-  description = "ID de l'AMI (Amazon Machine Image) à utiliser pour les instances EC2"
-  type        = string
-  default     = "{{ ami_id }}"
-}
 
 {% if vpc_id %}
 variable "vpc_id" {

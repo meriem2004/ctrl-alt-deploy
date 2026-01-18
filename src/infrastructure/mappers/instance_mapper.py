@@ -25,13 +25,13 @@ MACHINE_SIZE_TO_INSTANCE_TYPE: Dict[MachineSize, str] = {
     MachineSize.XL: "t3.xlarge",     # Très grand : 4 vCPU, 16 GB RAM - Idéal pour apps intensives
 }
 
-# Mapping des niveaux de scalabilité vers les types d'instances EC2
-# Format : {Scalability: "instance_type"}
-# Plus le niveau est élevé, plus l'instance est puissante
-SCALABILITY_TO_INSTANCE_TYPE: Dict[Scalability, str] = {
-    Scalability.LOW: "t3.micro",     # Faible scalabilité = instance petite
-    Scalability.MED: "t3.medium",    # Scalabilité moyenne = instance moyenne
-    Scalability.HIGH: "t3.large",    # Haute scalabilité = instance grande
+# Mapping des niveaux de scalabilité vers le nombre maximum d'instances
+# Format : {Scalability: int}
+# LOW: 1 (une seule machine), MED: 3 (petit groupe), HIGH: 10 (groupe plus large)
+SCALABILITY_TO_MAX_INSTANCES: Dict[Scalability, int] = {
+    Scalability.LOW: 1,
+    Scalability.MED: 3,
+    Scalability.HIGH: 10,
 }
 
 
@@ -58,56 +58,39 @@ def map_machine_size_to_instance_type(machine_size: MachineSize) -> str:
     return MACHINE_SIZE_TO_INSTANCE_TYPE[machine_size]
 
 
-def map_scalability_to_instance_type(scalability: Scalability) -> str:
+def map_scalability_to_max_instances(scalability: Scalability) -> int:
     """
-    Convertit un niveau de scalabilité (LOW, MED, HIGH) en type d'instance EC2 AWS.
+    Convertit un niveau de scalabilité (LOW, MED, HIGH) en nombre maximum d'instances.
     
     Args:
         scalability: Le niveau de scalabilité (Scalability.LOW, MED, ou HIGH)
         
     Returns:
-        Le type d'instance EC2 correspondant (ex: "t3.medium")
-        
-    Example:
-        >>> map_scalability_to_instance_type(Scalability.MED)
-        't3.medium'
+        Le nombre maximum d'instances (1, 3, ou 10)
     """
-    # On récupère le type d'instance depuis le dictionnaire de mapping
-    if scalability not in SCALABILITY_TO_INSTANCE_TYPE:
+    if scalability not in SCALABILITY_TO_MAX_INSTANCES:
         raise ValueError(f"Niveau de scalabilité non supporté: {scalability}")
     
-    # Retourne le type d'instance correspondant
-    return SCALABILITY_TO_INSTANCE_TYPE[scalability]
+    return SCALABILITY_TO_MAX_INSTANCES[scalability]
 
 
 def get_instance_type_for_service(
     machine_size: MachineSize,
-    scalability: Scalability
+    scalability: Scalability = None
 ) -> str:
     """
-    Détermine le type d'instance EC2 pour un service en combinant machine_size et scalability.
+    Détermine le type d'instance EC2 pour un service en fonction de machine_size.
     
-    Logique :
-    - Si scalability est HIGH, on priorise la scalabilité (instance plus puissante)
-    - Sinon, on utilise machine_size comme référence principale
+    Note: La scalabilité (LOW, MED, HIGH) n'influence plus le type de machine,
+    mais déterminera plus tard le nombre d'instances dans un Auto Scaling Group.
     
     Args:
         machine_size: La taille de machine spécifiée (S, M, L, XL)
-        scalability: Le niveau de scalabilité (LOW, MED, HIGH)
+        scalability: Optionnel, conservé pour compatibilité de signature.
         
     Returns:
-        Le type d'instance EC2 final (ex: "t3.large")
-        
-    Example:
-        >>> get_instance_type_for_service(MachineSize.M, Scalability.HIGH)
-        't3.large'
+        Le type d'instance EC2 final (ex: "t3.medium")
     """
-    # Si la scalabilité est HIGH, on utilise le mapping de scalabilité
-    # car HIGH nécessite une instance plus puissante
-    if scalability == Scalability.HIGH:
-        return map_scalability_to_instance_type(scalability)
-    
-    # Sinon, on utilise la taille de machine comme référence principale
-    # C'est la taille que l'utilisateur a explicitement choisie
+    # On utilise maintenant uniquement la taille de machine pour le type d'instance
     return map_machine_size_to_instance_type(machine_size)
 

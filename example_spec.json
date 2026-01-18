@@ -11,8 +11,8 @@
     }
   },
   "infrastructure": {
-    "scalability": "MED",
-    "machine_size": "M",
+    "scalability": "LOW",
+    "machine_size": "S",
     "vpc_id": null,
     "key_pair": "my-keypair",
     "dns_enabled": false

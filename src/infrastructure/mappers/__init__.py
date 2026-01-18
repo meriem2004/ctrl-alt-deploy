@@ -4,10 +4,10 @@ Mappers - Conversion des abstractions en valeurs AWS concrètes.
 
 from .instance_mapper import (
     map_machine_size_to_instance_type,
-    map_scalability_to_instance_type,
+    map_scalability_to_max_instances,
     get_instance_type_for_service,
     MACHINE_SIZE_TO_INSTANCE_TYPE,
-    SCALABILITY_TO_INSTANCE_TYPE
+    SCALABILITY_TO_MAX_INSTANCES
 )
 
 from .rds_mapper import (
@@ -24,10 +24,10 @@ from .rds_mapper import (
 __all__ = [
     # EC2 mappers
     'map_machine_size_to_instance_type',
-    'map_scalability_to_instance_type',
+    'map_scalability_to_max_instances',
     'get_instance_type_for_service',
     'MACHINE_SIZE_TO_INSTANCE_TYPE',
-    'SCALABILITY_TO_INSTANCE_TYPE',
+    'SCALABILITY_TO_MAX_INSTANCES',
     # RDS mappers
     'map_machine_size_to_rds_instance_type',
     'map_scalability_to_rds_instance_type',
