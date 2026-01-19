@@ -1,0 +1,33 @@
+# Variables Terraform pour la configuration
+
+variable "aws_region" {
+  description = "Région AWS où déployer les ressources"
+  type        = string
+  default     = "{{ region }}"
+}
+
+
+{% if vpc_id %}
+variable "vpc_id" {
+  description = "ID du VPC existant à utiliser"
+  type        = string
+  default     = "{{ vpc_id }}"
+}
+{% endif %}
+
+{% if access_key and secret_key %}
+variable "aws_access_key" {
+  description = "Clé d'accès AWS"
+  type        = string
+  sensitive   = true
+  default     = "{{ access_key }}"
+}
+
+variable "aws_secret_key" {
+  description = "Clé secrète AWS"
+  type        = string
+  sensitive   = true
+  default     = "{{ secret_key }}"
+}
+{% endif %}
+

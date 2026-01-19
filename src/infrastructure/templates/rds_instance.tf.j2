@@ -1,0 +1,135 @@
+# Template pour générer une ressource RDS Terraform
+# Variables: service_name, instance_type, engine, engine_version, ports, environment, db_name, db_username, db_password
+
+# Subnet Group pour RDS (nécessaire pour RDS)
+resource "aws_db_subnet_group" "{{ service_name }}_subnet_group" {
+  name       = "{{ service_name }}-subnet-group"
+{% if vpc_id %}
+  subnet_ids = data.aws_subnets.existing.ids
+{% else %}
+  subnet_ids = aws_subnet.private[*].id
+{% endif %}
+  
+  tags = {
+    Name      = "{{ service_name }}-subnet-group"
+    Service   = "{{ service_name }}"
+    ManagedBy = "ctrl-alt-deploy"
+  }
+}
+
+# Security Group pour RDS
+resource "aws_security_group" "{{ service_name }}_sg" {
+  name        = "{{ service_name }}-sg"
+  description = "Security group for {{ service_name }} RDS instance"
+  
+{% for port in ports %}
+  ingress {
+    description     = "Allow database traffic on port {{ port }}"
+    from_port       = {{ port }}
+    to_port         = {{ port }}
+    protocol        = "tcp"
+    cidr_blocks     = ["10.0.0.0/16"]  # Autoriser depuis le VPC (à ajuster selon votre VPC)
+    # Note: En production, utiliser security_groups pour restreindre aux instances EC2 spécifiques
+  }
+{% endfor %}
+  
+  egress {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  tags = {
+    Name      = "{{ service_name }}-sg"
+    Service   = "{{ service_name }}"
+    ManagedBy = "ctrl-alt-deploy"
+  }
+}
+
+# Instance RDS
+resource "aws_db_instance" "{{ service_name }}" {
+  identifier = "{{ service_name }}-db"
+  
+  # Configuration du moteur
+  engine         = "{{ engine }}"
+  engine_version = "{{ engine_version }}"
+  
+  # Configuration de l'instance
+  instance_class = "{{ instance_type }}"
+  allocated_storage = {{ allocated_storage | default(20) }}
+  max_allocated_storage = {{ max_allocated_storage | default(100) }}
+  storage_type = "gp3"
+  storage_encrypted = true
+  
+  # Configuration de la base de données
+  db_name  = "{{ db_name | default(service_name) }}"
+  username = "{{ db_username | default('admin') }}"
+  password = "{{ db_password }}"
+  
+  # Configuration réseau
+  db_subnet_group_name   = aws_db_subnet_group.{{ service_name }}_subnet_group.name
+  vpc_security_group_ids = [aws_security_group.{{ service_name }}_sg.id]
+  publicly_accessible    = false  # RDS ne doit pas être accessible publiquement par défaut
+  
+  # Configuration de sauvegarde
+  backup_retention_period = 7
+  backup_window          = "03:00-04:00"
+  maintenance_window     = "mon:04:00-mon:05:00"
+  
+  # Configuration de disponibilité
+  multi_az = {{ multi_az | default(false) }}
+  
+  # Configuration de suppression
+  skip_final_snapshot       = true  # En production, mettre à false
+  final_snapshot_identifier = "{{ service_name }}-final-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}"
+  deletion_protection       = false  # En production, mettre à true
+  
+  # Tags
+  tags = {
+    Name      = "{{ service_name }}"
+    Service   = "{{ service_name }}"
+    ManagedBy = "ctrl-alt-deploy"
+  }
+}
+
+# Data source pour récupérer les subnets
+{% if vpc_id %}
+# Utiliser un VPC existant
+data "aws_vpc" "existing" {
+  id = "{{ vpc_id }}"
+}
+
+data "aws_subnets" "existing" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.existing.id]
+  }
+}
+{% else %}
+# Utiliser le VPC créé automatiquement
+# Les subnets privées sont déjà définies dans vpc.tf
+{% endif %}
+
+# Outputs - Valeurs retournées après le déploiement
+output "{{ service_name }}_db_endpoint" {
+  description = "Endpoint de l'instance RDS pour {{ service_name }}"
+  value       = aws_db_instance.{{ service_name }}.endpoint
+}
+
+output "{{ service_name }}_db_address" {
+  description = "Adresse de l'instance RDS pour {{ service_name }}"
+  value       = aws_db_instance.{{ service_name }}.address
+}
+
+output "{{ service_name }}_db_port" {
+  description = "Port de l'instance RDS pour {{ service_name }}"
+  value       = aws_db_instance.{{ service_name }}.port
+}
+
+output "{{ service_name }}_db_name" {
+  description = "Nom de la base de données pour {{ service_name }}"
+  value       = aws_db_instance.{{ service_name }}.db_name
+}
+
