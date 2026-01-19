@@ -1,0 +1,6 @@
+fileignoreconfig:
+- filename: test_parser.py
+  checksum: 665ac498f2c9d8a98f700d27a7022a3f8b5b75a0f981c1d7aa99fc1fa881a983
+- filename: examples/sample-spec.yaml
+  checksum: e4bf0d690d2a7729023fb340e0b84415381a4816b9204597611c1dea7e99ae0f
+version: "1.0"
