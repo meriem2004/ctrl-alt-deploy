@@ -81,34 +81,7 @@ Supported formats: JSON and YAML.
 
 Minimal example:
 
-```json
-{
-  "aws": {
-    "access_key": "YOUR_AWS_ACCESS_KEY",
-    "secret_key": "YOUR_AWS_SECRET_KEY",
-    "region": "us-east-1"
-  },
-  "infrastructure": {
-    "scalability": "LOW",
-    "machine_size": "S",
-    "vpc_id": null,
-    "key_pair": null,
-    "dns_enabled": true
-  },
-  "application": {
-    "repository_url": "https://github.com/user/app.git",
-    "services": [
-      {
-        "name": "frontend",
-        "image": "myorg/frontend:latest",
-        "ports": [3000],
-        "environment": { "NODE_ENV": "production" },
-        "type": "EC2"
-      }
-    ]
-  }
-}
-```
+![Specification Example](assets/image%20(2).png)
 
 ### Service Types
 
