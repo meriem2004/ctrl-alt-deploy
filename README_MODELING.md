@@ -7,7 +7,6 @@ Il situe conceptuellement nos fichiers de configuration, nos classes Python et n
 ![Architecture de modélisation](assets/modeling_architecture.png)
 
 ---
-
 ## 🏛️ La Pyramide de Modélisation (MOF)
 
 Le projet structure ses données et définitions selon les 4 niveaux d'abstraction classiques :
