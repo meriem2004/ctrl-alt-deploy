@@ -2,6 +2,44 @@
 
 **Ctrl-Alt-Deploy** is a powerful cloud deployment automation platform that radically simplifies the process of deploying applications on AWS. By replacing thousands of lines of complex infrastructure code with a single, intuitive specification file, it democratizes cloud access for developers and organizations.
 
+## 📄 Abstract
+
+**Ctrl-Alt-Deploy** is an advanced cloud deployment automation tool that bridges the gap between high-level architectural intent and concrete infrastructure provisioning. By leveraging Model-Driven Architecture (MDA) principles, it allows developers to define complex AWS infrastructures using simple, validated specifications (JSON/YAML), which are then automatically transformed into secure, production-ready Terraform code. This project addresses the complexity of modern cloud operations by providing a robust, 4-layer abstraction pipeline: Input, Validation, Generation, and Execution.
+
+## 📑 Table of Contents
+
+- [🎯 Project Overview](#-project-overview)
+  - [The Problem](#the-problem)
+  - [The Solution](#the-solution)
+  - [Use Cases](#use-cases)
+- [🏗️ Technical Architecture](#%EF%B8%8F-technical-architecture)
+  - [Technology Stack](#technology-stack)
+  - [Architecture Layers](#architecture-layers)
+  - [Modeling Concepts](#modeling-concepts)
+- [🔄 Workflow](#-workflow)
+- [📐 Modeling Architecture (M0 - M3)](#-modeling-architecture-m0---m3)
+  - [The Modeling Pyramid (MOF)](#%EF%B8%8F-the-modeling-pyramid-mof)
+  - [Level Details](#-level-details)
+  - [Transformation Flow](#-transformation-flow-model-transformation)
+  - [Why this architecture?](#-why-this-architecture)
+- [📂 Project Structure](#-project-structure)
+- [⚙️ Installation & Setup](#%EF%B8%8F-installation--setup)
+  - [Prerequisites](#prerequisites)
+  - [Backend Setup](#1-backend-setup-python)
+  - [Frontend Setup](#2-frontend-setup-cli)
+- [🚀 Usage](#-usage)
+  - [Define your Specification](#1-define-your-specification)
+  - [Validate the Specification](#2-validate-the-specification)
+  - [Deploy](#3-deploy)
+- [🧪 Testing & Quality Assurance](#-testing--quality-assurance)
+  - [Running Tests](#running-tests)
+  - [Test Categories](#test-categories)
+- [🛠 Features](#-features)
+- [🤝 Contributing](#-contributing)
+
+---
+
+
 ---
 
 ## 🎯 Project Overview
@@ -51,6 +89,137 @@ The system uses a sophisticated meta-modeling approach:
 - **Level 2 (Meta-Meta-Models)**: Languages used to define the system (Python/Pydantic, HCL, JSONSchema).
 - **Level 1 (Meta-Models)**: The schemas defining what an invalid spec looks like (Spec File Schema, Validation Rules).
 - **Level 0 (Models)**: The actual data instances (Your `spec.json`, the generated `.tf` files, the active AWS resources).
+
+---
+
+
+---
+
+## 🔄 Workflow
+
+![Workflow Diagram](assets/workflow.png)
+
+---
+
+## 📐 Modeling Architecture (M0 - M3)
+
+This section details the modeling architecture of the **Ctrl-Alt-Deploy** project, following the principles of **Model-Driven Engineering (MDE)** and **Model Driven Architecture (MDA)**.
+
+It conceptually situates our configuration files, Python classes, and actual infrastructure within the **MOF (Meta-Object Facility) pyramid** defined by the OMG.
+
+![Modeling Architecture](assets/modeling_architecture.png)
+
+### 🏛️ The Modeling Pyramid (MOF)
+
+The project structures its data and definitions according to the 4 classic abstraction levels:
+
+```mermaid
+graph TD
+    M3[M3: Meta-Meta-Model] -->|Defines| M2
+    M2[M2: Meta-Model] -->|Defines| M1
+    M1[M1: Model] -->|Represents| M0
+    M0[M0: Real World]
+
+    subgraph "Abstraction Layer"
+    M3
+    M2
+    end
+
+    subgraph "Concrete Layer"
+    M1
+    M0
+    end
+```
+
+### 🔍 Level Details
+
+#### 🔹 M3: Meta-Meta-Model (The Language)
+This is the language used to define our meta-model. It provides basic primitives (Class, String, Integer, ValidationRule).
+In this project, the M3 level consists of:
+*   **Python Class System** (type, object)
+*   **Pydantic Metaclasses** (`BaseModel`, `Field`, `Enum`)
+*   **JSON Schema Specification** (indirectly, via Pydantic model serialization)
+
+**Role**: Provide the grammar for writing M2.
+
+#### 🔹 M2: Meta-Model (The Structure)
+This is the abstract definition of what a "Valid Deployment" is. It does not contain project-specific data, but the structure that any project must respect.
+*   **Source files**: `src/models.py`
+*   **Components**:
+    *   `DeploymentSpec` (Root)
+    *   `Service` (Entity)
+    *   `AWSConfig` (Configuration)
+    *   `ServiceType` (Enumeration: EC2, RDS, ECS)
+
+**Example M2 code (src/models/models.py):**
+```python
+class Service(BaseModel):
+    name: str = Field(..., max_length=64)
+    type: ServiceType = Field(default=ServiceType.EC2)
+    scaling: Optional[ScalingConfig] = None
+    
+    @field_validator('ports')
+    def validate_ports(cls, v):
+        # M2 level validation rule
+        ...
+```
+**Role**: Define authorized rules, types, and relations.
+
+#### 🔹 M1: Model (The Concrete Instance)
+This is a specific instance of the meta-model. It is the file written by the user to describe THEIR application.
+*   **Files**: `spec.yaml`, `spec.json`
+*   **Nature**: Declarative description of a desired infrastructure.
+
+**Example M1 (spec.yaml):**
+```yaml
+aws:
+  region: "us-east-1"
+
+application:
+  services:
+    - name: "my-backend"  # Instance of M2:Service.name
+      type: "EC2"         # Instance of M2:ServiceType
+      ports: [8080]
+```
+**Role**: Capture user intent compliant with M2 rules.
+
+#### 🔹 M0: Real World (Execution)
+These are the physical or virtual objects that actually exist during execution.
+*   **Elements**:
+    *   The EC2 instance `i-0123456789` running on AWS.
+    *   The active RDS database.
+    *   The VPC created with ID `vpc-abcde`.
+
+**Role**: The tangible operational reality.
+
+### 🔄 Transformation Flow (Model Transformation)
+
+The project acts as a model transformation engine:
+
+1.  **Parsing & Validation**: `M1 (spec.yaml)` -> Validation against `M2 (Pydantic Models)`
+2.  **Model-to-Text (M2T)**: The validated model is transformed into Terraform code via Jinja2.
+3.  **Execution**: Terraform applies the code to create `M0`.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Parser
+    participant Terraform
+    participant AWS
+
+    User->>Parser: Provides spec.yaml (M1)
+    Parser->>Parser: Validates against src/models.py (M2)
+    Note right of Parser: If valid, M1 complies with M2
+    Parser->>Terraform: Generates .tf files
+    Terraform->>AWS: Terraform Apply
+    AWS->>AWS: Provisions Resources (M0)
+```
+
+### 💡 Why this architecture?
+
+*   **Model/Meta-model Separation**: Allows evolving rules (M2) without breaking the engine, simply requiring users to update their files (M1).
+*   **Independence**: The model (M1) is agnostic of the final technical implementation (Terraform, CloudFormation, Pulumi). Only the generator changes.
+*   **Strong Validation**: Impossible to create an invalid M0 resource because M1 is rigorously verified against M2 before any action.
 
 ---
 
