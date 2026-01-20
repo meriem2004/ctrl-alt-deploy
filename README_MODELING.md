@@ -4,7 +4,7 @@ Ce document détaille l'architecture de modélisation du projet **Ctrl-Alt-Deplo
 
 Il situe conceptuellement nos fichiers de configuration, nos classes Python et notre infrastructure réelle dans la **pyramide MOF (Meta-Object Facility)** définie par l'OMG.
 
-![Architecture de modélisation](C:/Users/pc/.gemini/antigravity/brain/28667549-8041-4ec4-9f09-d8e53303bb9b/uploaded_image_1768944812742.png)
+![Architecture de modélisation](assets/modeling_architecture.png)
 
 ---
 
