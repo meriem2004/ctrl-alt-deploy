@@ -2,7 +2,6 @@
 
 ## Overview
 
-<<<<<<< HEAD
 ## 📄 Abstract
 
 **Ctrl-Alt-Deploy** is an advanced cloud deployment automation tool that bridges the gap between high-level architectural intent and concrete infrastructure provisioning. By leveraging Model-Driven Architecture (MDA) principles, it allows developers to define complex AWS infrastructures using simple, validated specifications (JSON/YAML), which are then automatically transformed into secure, production-ready Terraform code. This project addresses the complexity of modern cloud operations by providing a robust, 4-layer abstraction pipeline: Input, Validation, Generation, and Execution.
@@ -42,9 +41,6 @@
 
 
 ---
-=======
-Ctrl-Alt-Deploy automates AWS deployments from a single spec file. It validates configuration, generates Terraform, and provisions infrastructure (EC2, RDS, VPC, networking). The project targets a one-command experience while keeping the internal architecture modular and testable.
->>>>>>> 73c9bdd510ccd5895e29edf6f5087086d2719624
 
 ## Goals
 
@@ -120,7 +116,6 @@ Minimal example:
 - RDS: managed database services
 - ECS: container services (reserved for future expansion)
 
-<<<<<<< HEAD
 
 ---
 
@@ -253,9 +248,6 @@ sequenceDiagram
 ---
 
 ## 📂 Project Structure
-=======
-### Validation Rules (examples)
->>>>>>> 73c9bdd510ccd5895e29edf6f5087086d2719624
 
 - Ports must be 1-65535 and non-conflicting
 - Service names must be unique
