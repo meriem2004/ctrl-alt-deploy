@@ -31,7 +31,8 @@ from models.models import DeploymentSpec, Service, ServiceType, Scalability
 # Import des mappers pour convertir les abstractions
 from infrastructure.mappers.instance_mapper import (
     get_instance_type_for_service,
-    map_scalability_to_max_instances
+    map_scalability_to_max_instances,
+    get_scaling_config_for_service
 )
 from infrastructure.mappers.rds_mapper import (
     get_rds_instance_type_for_service,
@@ -187,15 +188,73 @@ class TerraformGenerator:
     def _generate_ec2_instance_tf(self, service: Service, spec: DeploymentSpec) -> None:
         """
         Génère un fichier Terraform pour une instance EC2 spécifique.
+        Si la scalabilité est élevée, génère un Auto Scaling Group (ASG) et un Load Balancer (ALB).
         
         Args:
-            service: Le service EC2 à déployer (contient name, ports, etc.)
-            spec: Le DeploymentSpec complet (pour accéder à infrastructure, aws, etc.)
+            service: Le service EC2 à déployer
+            spec: Le DeploymentSpec complet
         """
+        # Obtenir les paramètres de scalabilité
+        min_size, max_size, desired_capacity = get_scaling_config_for_service(
+            service, spec.infrastructure.scalability
+        )
+        
+        # Si max_instances > 1, on utilise Auto Scaling + Load Balancer
+        if max_size > 1:
+            print(f"  ℹ️  Service {service.name} uses Auto Scaling (max={max_size})")
+            # 1. Générer ASG (Launch Template + Auto Scaling Group)
+            self._generate_asg_tf(service, spec, min_size, max_size, desired_capacity)
+            
+            # 2. Générer Load Balancer (si le service expose des ports)
+            if service.ports:
+                self._generate_alb_tf(service, spec)
+        else:
+            # Sinon, instance unique (EC2 simple)
+            self._generate_single_ec2_tf(service, spec)
+
+    def _shell_escape(self, value: str) -> str:
+        """Return a POSIX-safe single-quoted string."""
+        return "'" + value.replace("'", "'\"'\"'") + "'"
+
+    def _build_docker_user_data(self, service: Service, spec: DeploymentSpec) -> str:
+        """Build user data script to install Docker and run the service container."""
+        lines = [
+            "#!/bin/bash",
+            "set -euo pipefail",
+            "exec > /var/log/user-data.log 2>&1",
+            "apt-get update -y",
+            "apt-get install -y docker.io",
+            "systemctl enable --now docker",
+        ]
+
+        creds = None
+        if spec.docker and spec.docker.hub_credentials:
+            creds = spec.docker.hub_credentials
+
+        if creds and creds.username and creds.password:
+            user = self._shell_escape(creds.username)
+            pwd = self._shell_escape(creds.password)
+            lines.append(f"echo {pwd} | docker login -u {user} --password-stdin || true")
+
+        if service.image:
+            lines.append(f"docker pull {service.image}")
+            env_parts = []
+            for key, value in service.environment.items():
+                env_parts.append(f"-e {key}={self._shell_escape(value)}")
+            port_parts = [f"-p {port}:{port}" for port in service.ports]
+            run_parts = ["docker run -d --restart=always"] + port_parts + env_parts + [service.image]
+            lines.append(" ".join(run_parts))
+        else:
+            lines.append(f'echo "No image defined for {service.name}; skipping docker run"')
+
+        return "\n".join(lines)
+
+    def _generate_single_ec2_tf(self, service: Service, spec: DeploymentSpec) -> None:
+        """Méthode existante pour EC2 simple"""
         # Charge le template ec2_instance.tf.j2
         template = self.jinja_env.get_template("ec2_instance.tf.j2")
         
-        # Utilise le mapper pour convertir machine_size + scalability en type d'instance AWS
+        # Utilise le mapper pour convertir machine_size en type d'instance AWS
         instance_type = get_instance_type_for_service(
             machine_size=spec.infrastructure.machine_size,
             scalability=spec.infrastructure.scalability
@@ -207,7 +266,7 @@ class TerraformGenerator:
             "instance_type": instance_type,          # Type d'instance (ex: "t3.medium")
             "region": spec.aws.region,
             "ports": service.ports,                 # Liste des ports (ex: [8080, 3000])
-            "max_instances": map_scalability_to_max_instances(spec.infrastructure.scalability),
+            "max_instances": 1,                     # Force à 1 ici
             "vpc_id": spec.infrastructure.vpc_id,    # Peut être None
             "docker_image": service.image,          # Image Docker si spécifiée (peut être None)
             "tags": {}                              # Tags personnalisés (vide pour l'instant)
@@ -217,8 +276,47 @@ class TerraformGenerator:
         rendered = template.render(**context)
         
         # Écrit le fichier avec le nom du service
-        # Ex: backend_instance.tf
         output_file = self.output_dir / f"{service.name}_instance.tf"
+        output_file.write_text(rendered, encoding="utf-8")
+
+    def _generate_asg_tf(self, service: Service, spec: DeploymentSpec, min_size: int, max_size: int, desired: int) -> None:
+        """Génère la configuration ASG (Auto Scaling Group)"""
+        template = self.jinja_env.get_template("asg.tf.j2")
+        
+        instance_type = get_instance_type_for_service(spec.infrastructure.machine_size)
+        
+        user_data = self._build_docker_user_data(service, spec)
+        
+        context = {
+            "service_name": service.name,
+            "instance_type": instance_type,
+            "key_name": spec.infrastructure.key_pair or "default-key",
+            "min_size": min_size,
+            "max_size": max_size,
+            "desired_capacity": desired,
+            "desired_capacity": desired,
+            "subnet_ids": "aws_subnet.public[*].id" if not spec.infrastructure.vpc_id else '["subnet-12345"]', # Stub logic for existing VPC
+            "user_data": user_data,
+            "vpc_id": "aws_vpc.main.id" if not spec.infrastructure.vpc_id else f'"{spec.infrastructure.vpc_id}"'
+        }
+        
+        rendered = template.render(**context)
+        output_file = self.output_dir / f"{service.name}_asg.tf"
+        output_file.write_text(rendered, encoding="utf-8")
+
+    def _generate_alb_tf(self, service: Service, spec: DeploymentSpec) -> None:
+        """Génère la configuration ALB (Application Load Balancer)"""
+        template = self.jinja_env.get_template("alb.tf.j2")
+        
+        context = {
+            "service_name": service.name,
+            "vpc_id": "aws_vpc.main.id" if not spec.infrastructure.vpc_id else f'"{spec.infrastructure.vpc_id}"',
+            "subnet_ids": "aws_subnet.public[*].id" if not spec.infrastructure.vpc_id else '["subnet-12345"]',
+            "container_port": service.ports[0] if service.ports else 80
+        }
+        
+        rendered = template.render(**context)
+        output_file = self.output_dir / f"{service.name}_alb.tf"
         output_file.write_text(rendered, encoding="utf-8")
     
     def _generate_rds_instance_tf(self, service: Service, spec: DeploymentSpec) -> None:

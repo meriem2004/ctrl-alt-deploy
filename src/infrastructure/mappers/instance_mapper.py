@@ -19,7 +19,7 @@ from models.models import MachineSize, Scalability
 # Format : {MachineSize: "instance_type"}
 # Ces types sont optimisés pour différents cas d'usage
 MACHINE_SIZE_TO_INSTANCE_TYPE: Dict[MachineSize, str] = {
-    MachineSize.S: "t3.micro",      # Petit : 2 vCPU, 1 GB RAM - Idéal pour dev/test
+    MachineSize.S: "t3.micro",      # Petit : 2 vCPU, 1 GB RAM - Free Tier on newer accounts
     MachineSize.M: "t3.medium",      # Moyen : 2 vCPU, 4 GB RAM - Idéal pour apps standard
     MachineSize.L: "t3.large",       # Grand : 2 vCPU, 8 GB RAM - Idéal pour apps avec charge
     MachineSize.XL: "t3.xlarge",     # Très grand : 4 vCPU, 16 GB RAM - Idéal pour apps intensives
@@ -93,4 +93,40 @@ def get_instance_type_for_service(
     """
     # On utilise maintenant uniquement la taille de machine pour le type d'instance
     return map_machine_size_to_instance_type(machine_size)
+
+
+def get_scaling_config_for_service(service: 'Service', global_scalability: Scalability) -> tuple[int, int, int]:
+    """
+    Détermine la configuration de scalabilité pour un service.
+    Priorité: Configuration spécifique du service > Configuration globale.
+    
+    Args:
+        service: Le service à configurer
+        global_scalability: Le niveau de scalabilité global (LOW, MED, HIGH)
+        
+    Returns:
+        Un tuple (min_instances, max_instances, desired_instances)
+    """
+    # 1. Vérifier si le service a une override
+    if service.scaling:
+        sc = service.scaling
+        # Pour desired, on prend la moyenne arrondie ou max, selon la politique
+        # Ici on simplifie en prenant max pour la haute dispo, ou min pour l'économie
+        # Prenons min pour commencer
+        desired = sc.min
+        return (sc.min, sc.max, desired)
+    
+    # 2. Sinon, utiliser la scalabilité globale
+    max_instances = SCALABILITY_TO_MAX_INSTANCES[global_scalability]
+    
+    if global_scalability == Scalability.LOW:
+        return (1, 1, 1)
+    elif global_scalability == Scalability.MED:
+        return (1, 3, 2)
+    elif global_scalability == Scalability.HIGH:
+        return (2, 10, 2)
+        
+    # Default fallback
+    return (1, 1, 1)
+
 

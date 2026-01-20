@@ -3,8 +3,8 @@
 
 # VPC principal
 resource "aws_vpc" "main" {
-  cidr_block           = "{{ vpc_cidr | default('10.0.0.0/16') }}"
-  enable_dns_hostnames = {{ dns_enabled | default(true) | lower }}
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = false
   enable_dns_support   = true
   
   tags = {
@@ -25,7 +25,7 @@ resource "aws_internet_gateway" "main" {
 
 # Subnet publique (pour EC2 avec IP publique)
 resource "aws_subnet" "public" {
-  count = {{ availability_zones_count | default(2) }}
+  count = 2
   
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.${count.index}.0/24"
@@ -41,7 +41,7 @@ resource "aws_subnet" "public" {
 
 # Subnet privée (pour RDS)
 resource "aws_subnet" "private" {
-  count = {{ availability_zones_count | default(2) }}
+  count = 2
   
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.${count.index + 10}.0/24"
@@ -71,7 +71,7 @@ resource "aws_route_table" "public" {
 
 # Association des subnets publiques avec la route table
 resource "aws_route_table_association" "public" {
-  count = {{ availability_zones_count | default(2) }}
+  count = 2
   
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
@@ -79,7 +79,7 @@ resource "aws_route_table_association" "public" {
 
 # Route Table pour les subnets privées (pas d'accès Internet direct)
 resource "aws_route_table" "private" {
-  count = {{ availability_zones_count | default(2) }}
+  count = 2
   
   vpc_id = aws_vpc.main.id
   
@@ -91,7 +91,7 @@ resource "aws_route_table" "private" {
 
 # Association des subnets privées avec les route tables
 resource "aws_route_table_association" "private" {
-  count = {{ availability_zones_count | default(2) }}
+  count = 2
   
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private[count.index].id

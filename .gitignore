@@ -30,6 +30,8 @@ wheels/
 *.egg
 MANIFEST
 
+spec.json
+
 # PyInstaller
 *.manifest
 *.spec

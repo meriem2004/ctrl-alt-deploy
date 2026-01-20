@@ -1,0 +1,82 @@
+# Launch Template for {{ service_name }}
+resource "aws_launch_template" "{{ service_name }}_lt" {
+  name_prefix   = "{{ service_name }}-lt-"
+  image_id      = data.aws_ami.ubuntu.id
+  instance_type = "{{ instance_type }}"
+  {% if key_name and key_name != "default-key" %}
+  key_name      = "{{ key_name }}"
+  {% endif %}
+
+  {% if user_data %}
+  user_data = base64encode(<<-EOF
+{{ user_data }}
+EOF
+  )
+  {% endif %}
+
+  network_interfaces {
+    associate_public_ip_address = true
+    security_groups             = [aws_security_group.{{ service_name }}_sg.id]
+  }
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "{{ service_name }}-instance"
+    }
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# Auto Scaling Group for {{ service_name }}
+resource "aws_autoscaling_group" "{{ service_name }}_asg" {
+  name                = "{{ service_name }}-asg"
+  vpc_zone_identifier = {{ subnet_ids }}
+  target_group_arns   = [aws_lb_target_group.{{ service_name }}_tg.arn]
+  health_check_type   = "ELB"
+  health_check_grace_period = 300
+
+  min_size         = {{ min_size }}
+  max_size         = {{ max_size }}
+  desired_capacity = {{ desired_capacity }}
+
+  launch_template {
+    id      = aws_launch_template.{{ service_name }}_lt.id
+    version = "$Latest"
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "{{ service_name }}"
+    propagate_at_launch = true
+  }
+}
+
+# Security Group for {{ service_name }} instances
+resource "aws_security_group" "{{ service_name }}_sg" {
+  name        = "{{ service_name }}-sg"
+  description = "Security group for {{ service_name }} instances"
+  vpc_id      = {{ vpc_id }}
+
+  ingress {
+    description     = "Allow traffic from ALB"
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    security_groups = [aws_security_group.{{ service_name }}_lb_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "{{ service_name }}-sg"
+  }
+}

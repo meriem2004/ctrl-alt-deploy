@@ -9,7 +9,7 @@ from models.models import DeploymentSpec
 from infrastructure.generators.terraform_generator import generate_terraform_config
 
 def main():
-    spec_file = Path("test_app_spec.json")
+    spec_file = Path("spec.json")
     if not spec_file.exists():
         print(f"Error: {spec_file} not found")
         return
