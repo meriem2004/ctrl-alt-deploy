@@ -16,7 +16,7 @@
 |:---:|:---:|:---:|
 | **Douae BAKKALI** | **Omar BEHRI** | **Meriem ABBOUD** |
 
-| <img src="assets/ilyas.jpg" width="130" style="border-radius: 8px; border: 2px solid #333;"/> | <img src="assets/1759925619944.jpg" width="130" style="border-radius: 8px; border: 2px solid #333;"/> | <img src="assets/1756592634579.jpg" width="130" style="border-radius: 8px; border: 2px solid #333;"/> |
+| <img src="assets/ilyas.jpg" width="130" style="border-radius: 8px; border: 2px solid #333;"/> | <img src="assets/1759925619944.jpg" width="130" style="border-radius: 8px; border: 2px solid #333;"/> | <img src="assets/meryem.jpg" width="130" style="border-radius: 8px; border: 2px solid #333;"/> |
 |:---:|:---:|:---:|
 | **Ilyas ELAMMARY** | **Charaf Eddine EL HMAMOUCHI** | **Meryem ELFADILI** |
 
