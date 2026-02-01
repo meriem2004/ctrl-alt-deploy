@@ -896,7 +896,7 @@ To demonstrate the versatility of Ctrl-Alt-Deploy, here are three examples repre
   - **Cost**: Free tier eligible.
   - **Outcome**: Site live in 3 minutes.
 
-### 🏢 Story 2: "The SMB Tech Lead" (Sarah)
+### 🏢 Story 2: "The SMB Tech Lead" (Sara)
 **Goal:** A stable staging environment for the company's internal tool with a backend and a database.
 
 - **Spec (`staging-spec.json`)**:
@@ -913,7 +913,7 @@ To demonstrate the versatility of Ctrl-Alt-Deploy, here are three examples repre
   ```
 
 - **Execution Flow**:
-  1. Sarah defines dependencies (`depends_on`).
+  1. Sara defines dependencies (`depends_on`).
   2. Runs deployment.
   3. System ensures RDS is created before EC2 instances.
   4. `scalability: MED` triggers creation of 3 redundant API instances.
@@ -923,7 +923,7 @@ To demonstrate the versatility of Ctrl-Alt-Deploy, here are three examples repre
   - **Networking**: Instances connected via private networking.
   - **Outcome**: Resilient staging environment matching production topology.
 
-### 🚀 Story 3: "The Platform Engineer" (Alex)
+### 🚀 Story 3: "The Platform Engineer" (Omar)
 **Goal:** High-traffic e-commerce launch. Requirements: Auto-scaling, Load Balancing, Zero Downtime.
 
 - **Spec (`production-spec.json`)**:
@@ -939,7 +939,7 @@ To demonstrate the versatility of Ctrl-Alt-Deploy, here are three examples repre
   ```
 
 - **Execution Flow**:
-  1. Alex specifies specific scaling limits.
+  1. Omar specifies specific scaling limits.
   2. Runs deployment.
   3. System activates "High Availability" mode: creates ALB, Target Groups, and ASG policies.
 
