@@ -35,10 +35,11 @@
 7. [Metamodel Design with EMF](#-metamodel-design-with-ecore-emf)
 8. [Demonstration & Results](#-demonstration--results)
 9. [Usage Guide](#-usage-guide)
-10. [Project Structure](#-project-structure)
-11. [Testing](#-testing)
-12. [Future Perspectives](#-future-perspectives)
-13. [Conclusion](#-conclusion)
+10. [3 Typical Usage Scenarios](#-3-typical-usage-scenarios-personnes-lambda)
+11. [Project Structure](#-project-structure)
+12. [Testing](#-testing)
+13. [Future Perspectives](#-future-perspectives)
+14. [Conclusion](#-conclusion)
 
 ---
 
@@ -862,6 +863,90 @@ terraform destroy
 ```
 
 At the prompt, type `yes` to confirm deletion.
+
+---
+
+## 🧪 3 Typical Usage Scenarios ("Personnes Lambda")
+
+To demonstrate the versatility of Ctrl-Alt-Deploy, here are three examples representing "lambda users" (typical personas) with different needs, showing the specification, the expected results, and the workflow.
+
+### 🎥 Story 1: "The Rapid Prototyper" (Sami)
+**Goal:** Deploy a simple web app validation for a hackathon. Needs it fast, cheap, and simple.
+
+- **Spec (`hackathon-spec.json`)**:
+  ```json
+  {
+    "infrastructure": { "scalability": "LOW", "machine_size": "S" },
+    "application": {
+      "services": [
+        { "name": "demo-site", "image": "nginx:alpine", "ports": [80], "type": "EC2" }
+      ]
+    }
+  }
+  ```
+
+- **Execution Flow**:
+  1. Sami writes the 10-line JSON file.
+  2. Runs `deploy run hackathon-spec.json`.
+  3. System validates valid JSON, generates Terraform for 1 EC2, 0 Load Balancers.
+  4. Automation applies changes.
+
+- **Result**:
+  - **AWS**: One t3.micro instance running Nginx. Security Group allows HTTP.
+  - **Cost**: Free tier eligible.
+  - **Outcome**: Site live in 3 minutes.
+
+### 🏢 Story 2: "The SMB Tech Lead" (Sarah)
+**Goal:** A stable staging environment for the company's internal tool with a backend and a database.
+
+- **Spec (`staging-spec.json`)**:
+  ```json
+  {
+    "infrastructure": { "scalability": "MED", "machine_size": "M" },
+    "application": {
+      "services": [
+        { "name": "api", "image": "myorg/api:v1", "ports": [5000], "type": "EC2", "depends_on": ["db"] },
+        { "name": "db", "type": "RDS", "ports": [5432] }
+      ]
+    }
+  }
+  ```
+
+- **Execution Flow**:
+  1. Sarah defines dependencies (`depends_on`).
+  2. Runs deployment.
+  3. System ensures RDS is created before EC2 instances.
+  4. `scalability: MED` triggers creation of 3 redundant API instances.
+
+- **Result**:
+  - **AWS**: 3 t3.medium instances (API), 1 RDS Postgres instance.
+  - **Networking**: Instances connected via private networking.
+  - **Outcome**: Resilient staging environment matching production topology.
+
+### 🚀 Story 3: "The Platform Engineer" (Alex)
+**Goal:** High-traffic e-commerce launch. Requirements: Auto-scaling, Load Balancing, Zero Downtime.
+
+- **Spec (`production-spec.json`)**:
+  ```json
+  {
+    "infrastructure": { "scalability": "HIGH", "machine_size": "L" },
+    "application": {
+      "services": [
+        { "name": "storefront", "image": "shop:2.0", "type": "EC2", "scaling": { "min": 2, "max": 10 } }
+      ]
+    }
+  }
+  ```
+
+- **Execution Flow**:
+  1. Alex specifies specific scaling limits.
+  2. Runs deployment.
+  3. System activates "High Availability" mode: creates ALB, Target Groups, and ASG policies.
+
+- **Result**:
+  - **AWS**: Application Load Balancer fronting an Auto Scaling Group.
+  - **Behavior**: System automatically adds instances when CPU > 70%.
+  - **Outcome**: Infrastructure withstands traffic spikes without manual intervention.
 
 ---
 
